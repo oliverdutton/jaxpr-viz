@@ -1,6 +1,14 @@
 import typing
-
+import pydot
 from jax._src import core as jax_core
+
+fix_name = lambda s: s.replace(':',';')
+def Node(**kwargs):
+    name = kwargs.pop('name')
+    return pydot.Node(name=fix_name(name), **kwargs) # avoid port intepretation of name
+
+def Edge(a: str, b: str):
+    return pydot.Edge(*map(fix_name, (a,b))) # avoid port intepretation of name
 
 
 def get_node_label(
@@ -22,7 +30,7 @@ def get_node_label(
     str
     """
     if show_avals:
-        return f"{v}: {v.aval.str_short()}"
+        return f"{v}: {v.aval.str_short(short_dtypes=True)}"
     else:
         return str(v)
 

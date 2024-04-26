@@ -5,6 +5,8 @@ import jax._src.core as jax_core
 import pydot
 
 from . import graph_utils, styling, utils
+Node = utils.Node
+Edge = utils.Edge
 
 sub_graph_return = typing.Tuple[
     typing.Union[pydot.Node, pydot.Subgraph],
@@ -68,7 +70,7 @@ def get_conditional(
     cond_node_id = f"{cond_graph_id}_node"
     cond_arguments = pydot.Subgraph(f"{cond_graph_id}_inputs", rank="same")
     cond_arguments.add_node(
-        pydot.Node(name=cond_node_id, label="idx", **styling.COND_NODE_STYLING)
+        Node(name=cond_node_id, label="idx", **styling.COND_NODE_STYLING)
     )
 
     in_edges = list()
@@ -81,7 +83,7 @@ def get_conditional(
         new_nodes.append(
             graph_utils.get_arg_node(cond_var_id, cond_var, show_avals, True)
         )
-    in_edges.append(pydot.Edge(cond_var_id, cond_node_id))
+    in_edges.append(Edge(cond_var_id, cond_node_id))
 
     for arg in conditional.invars[1:]:
         arg_id = f"{cond_graph_id}_{arg}"
@@ -89,7 +91,7 @@ def get_conditional(
         cond_arguments.add_node(
             graph_utils.get_arg_node(arg_id, arg, show_avals, is_literal)
         )
-        in_edges.append(pydot.Edge(f"{parent_id}_{arg}", arg_id))
+        in_edges.append(Edge(f"{parent_id}_{arg}", arg_id))
 
     cond_graph.add_subgraph(cond_arguments)
 
@@ -100,7 +102,7 @@ def get_conditional(
 
             if collapse_primitives:
                 cond_graph.add_node(
-                    pydot.Node(
+                    Node(
                         name=branch_graph_id,
                         label=label,
                         **styling.FUNCTION_NODE_STYLING,
@@ -112,11 +114,11 @@ def get_conditional(
                     if str(var)[-1] == "_":
                         continue
                     cond_graph.add_edge(
-                        pydot.Edge(f"{cond_graph_id}_{p_var}", branch_graph_id)
+                        Edge(f"{cond_graph_id}_{p_var}", branch_graph_id)
                     )
                 for var in conditional.outvars:
                     cond_graph.add_edge(
-                        pydot.Edge(branch_graph_id, f"{cond_graph_id}_{var}")
+                        Edge(branch_graph_id, f"{cond_graph_id}_{var}")
                     )
             else:
                 branch_graph = graph_utils.get_subgraph(
@@ -130,10 +132,10 @@ def get_conditional(
                     branch_graph.add_node(
                         graph_utils.get_var_node(arg_id, var, show_avals)
                     )
-                    cond_graph.add_edge(pydot.Edge(f"{cond_graph_id}_{p_var}", arg_id))
+                    cond_graph.add_edge(Edge(f"{cond_graph_id}_{p_var}", arg_id))
                 for var, c_var in zip(branch.jaxpr.outvars, conditional.outvars):
                     arg_id = f"{branch_graph_id}_{var}"
-                    cond_graph.add_edge(pydot.Edge(arg_id, f"{cond_graph_id}_{c_var}"))
+                    cond_graph.add_edge(Edge(arg_id, f"{cond_graph_id}_{c_var}"))
                 cond_graph.add_subgraph(branch_graph)
         else:
             branch_graph_id = f"{cond_node_id}_branch_{i}"
@@ -219,7 +221,7 @@ def get_conditional(
                 cond_graph.add_subgraph(branch_graph)
             else:
                 cond_graph.add_node(
-                    pydot.Node(
+                    Node(
                         name=branch_graph_id,
                         label=branch_label,
                         **styling.FUNCTION_NODE_STYLING,
@@ -233,12 +235,12 @@ def get_conditional(
 
                     if not is_literal:
                         cond_graph.add_edge(
-                            pydot.Edge(f"{cond_graph_id}_{p_var}", branch_graph_id)
+                            Edge(f"{cond_graph_id}_{p_var}", branch_graph_id)
                         )
 
                 for var in conditional.outvars:
                     cond_graph.add_edge(
-                        pydot.Edge(branch_graph_id, f"{cond_graph_id}_{var}")
+                        Edge(branch_graph_id, f"{cond_graph_id}_{var}")
                     )
 
     cond_out_graph, cond_out_edges, cond_out_nodes, _ = graph_utils.get_outputs(
@@ -307,7 +309,7 @@ def _get_node(
     n = n + 1
 
     style = styling.PRIMITIVE_STYLING if is_primitive else styling.FUNCTION_NODE_STYLING
-    node = pydot.Node(name=node_id, label=name, **style)
+    node = Node(name=node_id, label=name, **style)
 
     new_nodes = list()
     in_edges = list()
@@ -318,12 +320,12 @@ def _get_node(
             new_nodes.append(
                 graph_utils.get_arg_node(f"{graph_id}_{var}", var, show_avals, True)
             )
-        in_edges.append(pydot.Edge(f"{graph_id}_{var}", node_id))
+        in_edges.append(Edge(f"{graph_id}_{var}", node_id))
 
     for var in eqn.outvars:
         var_id = f"{graph_id}_{var}"
         new_nodes.append(graph_utils.get_var_node(var_id, var, show_avals))
-        out_edges.append(pydot.Edge(node_id, var_id))
+        out_edges.append(Edge(node_id, var_id))
 
     return node, in_edges, new_nodes, out_edges, n
 
@@ -474,7 +476,7 @@ def get_scan(
         body_in = body_in.intersection(parent_in)
         body_out = body_out.intersection(parent_out)
 
-        body_graph = pydot.Node(
+        body_graph = Node(
             name=graph_id,
             label="body",
             **styling.FUNCTION_NODE_STYLING,
@@ -482,9 +484,9 @@ def get_scan(
         graph.add_node(body_graph)
 
         for v in body_in:
-            graph.add_edge(pydot.Edge(f"{graph_id}_{v}", graph_id))
+            graph.add_edge(Edge(f"{graph_id}_{v}", graph_id))
         for v in body_out:
-            graph.add_edge(pydot.Edge(graph_id, f"{graph_id}_{v}"))
+            graph.add_edge(Edge(graph_id, f"{graph_id}_{v}"))
     else:
         body_graph = pydot.Subgraph(
             body_graph_id,
@@ -545,7 +547,7 @@ def get_while_branch(
     graph_id = f"cluster_{parent_id}_{label}"
 
     if collapse_primitives and not utils.contains_non_primitives(jaxpr.eqns):
-        graph = pydot.Node(
+        graph = Node(
             name=graph_id,
             label=label,
             **styling.FUNCTION_NODE_STYLING,
@@ -559,12 +561,12 @@ def get_while_branch(
                 continue
             is_literal = isinstance(var, jax_core.Literal)
             if not is_literal:
-                arg_edges.append(pydot.Edge(f"{parent_id}_{p_var}", graph_id))
+                arg_edges.append(Edge(f"{parent_id}_{p_var}", graph_id))
 
         for (var, p_var) in zip(jaxpr.outvars, parent_outvars):
             if isinstance(var, jax_core.DropVar):
                 continue
-            out_edges.append(pydot.Edge(graph_id, f"{parent_id}_{p_var}"))
+            out_edges.append(Edge(graph_id, f"{parent_id}_{p_var}"))
 
         return graph, arg_edges, out_edges, n
     else:
@@ -641,7 +643,7 @@ def get_while(
             graph_utils.get_arg_node(arg_id, var, show_avals, is_literal)
         )
         if not is_literal:
-            arg_edges.append(pydot.Edge(f"{parent_id}_{var}", arg_id))
+            arg_edges.append(Edge(f"{parent_id}_{var}", arg_id))
 
     cond_graph, cond_arg_edges, _, n = get_while_branch(
         eqn.params["cond_jaxpr"].jaxpr,
@@ -684,7 +686,7 @@ def get_while(
         arg_id = f"{while_graph_id}_{var}"
         while_graph.add_node(graph_utils.get_out_node(arg_id, var, show_avals))
         if not isinstance(var, jax_core.DropVar):
-            out_edges.append(pydot.Edge(arg_id, f"{parent_id}_{var}"))
+            out_edges.append(Edge(arg_id, f"{parent_id}_{var}"))
 
     return while_graph, arg_edges, [], out_edges, n
 

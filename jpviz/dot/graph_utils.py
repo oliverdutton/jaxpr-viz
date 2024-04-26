@@ -4,7 +4,8 @@ import pydot
 from jax._src import core as jax_core
 
 from . import styling, utils
-
+Node = utils.Node
+Edge = utils.Edge
 
 def get_arg_node(
     arg_id: str,
@@ -32,7 +33,7 @@ def get_arg_node(
     pydot.Node
     """
     style = styling.LITERAL_STYLING if is_literal else styling.IN_ARG_STYLING
-    return pydot.Node(
+    return Node(
         name=arg_id,
         label=utils.get_node_label(var, show_avals),
         **style,
@@ -60,7 +61,7 @@ def get_const_node(
     -------
     pydot.Node
     """
-    return pydot.Node(
+    return Node(
         name=arg_id,
         label=utils.get_node_label(var, show_avals),
         **styling.CONST_ARG_STYLING,
@@ -84,7 +85,7 @@ def get_var_node(var_id: str, var: jax_core.Var, show_avals: bool) -> pydot.Node
     -------
     pydot.Node
     """
-    return pydot.Node(
+    return Node(
         name=var_id,
         label=utils.get_node_label(var, show_avals),
         **styling.VAR_STYLING,
@@ -108,7 +109,7 @@ def get_out_node(out_id: str, var: jax_core.Var, show_avals: bool) -> pydot.Node
     -------
     pydot.Node
     """
-    return pydot.Node(
+    return Node(
         name=out_id,
         label=utils.get_node_label(var, show_avals),
         **styling.OUT_ARG_STYLING,
@@ -189,7 +190,7 @@ def get_arguments(
         is_literal = isinstance(var, jax_core.Literal)
         argument_nodes.add_node(get_arg_node(arg_id, var, show_avals, is_literal))
         if not is_literal:
-            argument_edges.append(pydot.Edge(f"{parent_id}_{p_var}", arg_id))
+            argument_edges.append(Edge(f"{parent_id}_{p_var}", arg_id))
 
     return argument_nodes, argument_edges
 
@@ -258,7 +259,7 @@ def get_scan_arguments(
         if parent_is_literal:
             literal_id = f"{arg_id}_lit"
             argument_nodes.add_node(get_arg_node(literal_id, p_var, show_avals, True))
-            argument_nodes.add_edge(pydot.Edge(literal_id, arg_id))
+            argument_nodes.add_edge(Edge(literal_id, arg_id))
 
         if i < n_const:
             const_nodes.add_node(get_arg_node(arg_id, var, show_avals, var_is_literal))
@@ -270,7 +271,7 @@ def get_scan_arguments(
             )
 
         if not is_literal:
-            argument_edges.append(pydot.Edge(f"{parent_id}_{p_var}", arg_id))
+            argument_edges.append(Edge(f"{parent_id}_{p_var}", arg_id))
 
     argument_nodes.add_subgraph(const_nodes)
     argument_nodes.add_subgraph(carry_nodes)
@@ -338,11 +339,11 @@ def get_outputs(
     for var, p_var in zip(graph_outvars, parent_outvars):
         if str(var) in in_var_set:
             arg_id = f"{graph_id}_{var}_out"
-            id_edges.append(pydot.Edge(f"{graph_id}_{var}", arg_id))
+            id_edges.append(Edge(f"{graph_id}_{var}", arg_id))
         else:
             arg_id = f"{graph_id}_{var}"
         out_graph.add_node(get_out_node(arg_id, var, show_avals))
-        out_edges.append(pydot.Edge(arg_id, f"{parent_id}_{p_var}"))
+        out_edges.append(Edge(arg_id, f"{parent_id}_{p_var}"))
         out_nodes.append(get_var_node(f"{parent_id}_{p_var}", p_var, show_avals))
 
     return out_graph, out_edges, out_nodes, id_edges
@@ -418,14 +419,14 @@ def get_scan_outputs(
     for i, (var, p_var) in enumerate(zip(graph_outvars, parent_outvars)):
         if str(var) in in_var_set:
             arg_id = f"{graph_id}_{var}_out"
-            id_edges.append(pydot.Edge(f"{graph_id}_{var}", arg_id))
+            id_edges.append(Edge(f"{graph_id}_{var}", arg_id))
         else:
             arg_id = f"{graph_id}_{var}"
         if i < n_carry:
             carry_nodes.add_node(get_out_node(arg_id, var, show_avals))
         else:
             accumulate_nodes.add_node(get_out_node(arg_id, var, show_avals))
-        out_edges.append(pydot.Edge(arg_id, f"{parent_id}_{p_var}"))
+        out_edges.append(Edge(arg_id, f"{parent_id}_{p_var}"))
         out_nodes.append(get_var_node(f"{parent_id}_{p_var}", p_var, show_avals))
 
     out_graph.add_subgraph(carry_nodes)
